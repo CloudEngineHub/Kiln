@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set PyInstaller Environment Variable
+        run: echo "PYINSTALLER_COMPILE_BOOTLOADER=1" >> $env:GITHUB_ENV
+
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
@@ -36,8 +39,14 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - run: pip install https://github.com/rokm/pyinstaller/archive/refs/heads/stress-testing.zip
+        env:
+          PYINSTALLER_COMPILE_BOOTLOADER: 1
+
       # Compress MacOS app param ignored on Windows
       - run: sh ./app/desktop/build_desktop_app.sh --compress-mac-app
+        env:
+          PYINSTALLER_COMPILE_BOOTLOADER: 1
       - uses: actions/upload-artifact@v4
         with:
           name: kiln-desktop-${{ runner.os }}-${{ runner.arch }}
