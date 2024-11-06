@@ -1,6 +1,7 @@
 import contextlib
 import os
 import sys
+import time
 import tkinter as tk
 import webbrowser
 
@@ -106,3 +107,4 @@ if __name__ == "__main__":
         root.after(10, show_studio)
         root.after(10, close_splash)
         root.mainloop()
+        time.sleep(3)
