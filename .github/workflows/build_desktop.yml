@@ -26,7 +26,7 @@ jobs:
           cache: "pip"
 
       - name: Set up Python
-        run: uv python install
+        run: uv venv --python 3.12 --python-preference only-system
 
       - name: Install the project
         run: uv sync
