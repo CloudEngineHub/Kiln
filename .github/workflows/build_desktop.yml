@@ -39,7 +39,7 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - run: pip uninstall pyinstaller && set PYINSTALLER_COMPILE_BOOTLOADER=1 && pip install https://github.com/rokm/pyinstaller/archive/refs/heads/stress-testing.zip
+      - run: pip uninstall -y pyinstaller && set PYINSTALLER_COMPILE_BOOTLOADER=1 && pip install https://github.com/rokm/pyinstaller/archive/refs/heads/stress-testing.zip
         env:
           PYINSTALLER_COMPILE_BOOTLOADER: 1
 
