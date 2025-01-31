@@ -163,21 +163,6 @@ async def test_get_structured_output_options(
 
 
 @pytest.mark.asyncio
-async def test_langchain_model_from_provider_openai():
-    provider = KilnModelProvider(
-        name=ModelProviderName.openai, provider_options={"model": "gpt-4"}
-    )
-
-    with patch(
-        "kiln_ai.adapters.model_adapters.langchain_adapters.Config.shared"
-    ) as mock_config:
-        mock_config.return_value.open_ai_api_key = "test_key"
-        model = await langchain_model_from_provider(provider, "gpt-4")
-        assert isinstance(model, ChatOpenAI)
-        assert model.model_name == "gpt-4"
-
-
-@pytest.mark.asyncio
 async def test_langchain_model_from_provider_groq():
     provider = KilnModelProvider(
         name=ModelProviderName.groq, provider_options={"model": "mixtral-8x7b"}

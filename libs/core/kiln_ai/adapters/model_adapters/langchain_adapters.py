@@ -246,8 +246,8 @@ async def langchain_model_from_provider(
     provider: KilnModelProvider, model_name: str
 ) -> BaseChatModel:
     if provider.name == ModelProviderName.openai:
-        api_key = Config.shared().open_ai_api_key
-        return ChatOpenAI(**provider.provider_options, openai_api_key=api_key)  # type: ignore[arg-type]
+        # We use the OpenAICompatibleAdapter for OpenAI
+        raise ValueError("OpenAI is not supported in Langchain adapter")
     elif provider.name == ModelProviderName.openai_compatible:
         # See provider_tools.py for how base_url, key and other parameters are set
         return ChatOpenAI(**provider.provider_options)  # type: ignore[arg-type]

@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+from kiln_ai.adapters.ml_model_list import ModelProviderName
 from kiln_ai.adapters.model_adapters.langchain_adapters import LangchainAdapter
 from kiln_ai.datamodel import (
     DataSource,
@@ -20,6 +21,7 @@ from kiln_server.run_api import (
     RunSummary,
     connect_run_api,
     deep_update,
+    model_provider_from_string,
     run_from_id,
 )
 
@@ -64,7 +66,7 @@ def task_run_setup(tmp_path):
 
     run_task_request = {
         "model_name": "gpt_4o",
-        "provider": "openai",
+        "provider": "ollama",
         "plaintext_input": "Test input",
     }
 
@@ -80,7 +82,7 @@ def task_run_setup(tmp_path):
                 type=DataSourceType.synthetic,
                 properties={
                     "model_name": "gpt_4o",
-                    "model_provider": "openai",
+                    "model_provider": "ollama",
                     "adapter_name": "kiln_langchain_adapter",
                     "prompt_builder_name": "simple_prompt_builder",
                 },
@@ -188,7 +190,7 @@ async def test_run_task_structured_input(client, task_run_setup):
     ):
         run_task_request = {
             "model_name": "gpt_4o",
-            "provider": "openai",
+            "provider": "ollama",
             "structured_input": {"key": "value"},
         }
 
@@ -1215,3 +1217,11 @@ async def test_remove_tags_multiple_runs(client, task_run_setup):
     updated_run2 = TaskRun.from_id_and_parent_path(second_run.id, task.path)
     assert set(updated_run1.tags) == {"tag2"}
     assert set(updated_run2.tags) == {"tag3"}
+
+
+def test_model_provider_from_string():
+    assert model_provider_from_string("openai") == ModelProviderName.openai
+    assert model_provider_from_string("ollama") == ModelProviderName.ollama
+
+    with pytest.raises(ValueError, match="Unsupported provider: unknown"):
+        model_provider_from_string("unknown")

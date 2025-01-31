@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from fastapi import FastAPI, HTTPException
 from kiln_ai.adapters.adapter_registry import adapter_for_task
+from kiln_ai.adapters.ml_model_list import ModelProviderName
 from kiln_ai.adapters.prompt_builders import prompt_builder_from_ui_name
 from kiln_ai.datamodel import Task, TaskOutputRating, TaskOutputRatingType, TaskRun
 from kiln_ai.datamodel.basemodel import ID_TYPE
@@ -199,7 +200,7 @@ def connect_run_api(app: FastAPI):
         adapter = adapter_for_task(
             task,
             model_name=request.model_name,
-            provider=request.provider,
+            provider=model_provider_from_string(request.provider),
             prompt_builder=prompt_builder,
             tags=request.tags,
         )
@@ -281,3 +282,9 @@ async def update_run_util(
         updated_run.path = run.path
         updated_run.save_to_file()
         return updated_run
+
+
+def model_provider_from_string(provider: str) -> ModelProviderName:
+    if not provider or provider not in ModelProviderName.__members__:
+        raise ValueError(f"Unsupported provider: {provider}")
+    return ModelProviderName(provider)

@@ -167,7 +167,7 @@ built_in_models: List[KilnModel] = [
             ),
             KilnModelProvider(
                 name=ModelProviderName.openrouter,
-                provider_options={"model": "openai/gpt-4o-2024-08-06"},
+                provider_options={"model": "openai/gpt-4o"},
                 structured_output_mode=StructuredOutputMode.json_schema,
             ),
         ],

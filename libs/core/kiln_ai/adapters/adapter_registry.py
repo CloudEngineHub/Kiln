@@ -1,4 +1,5 @@
 from os import getenv
+from typing import NoReturn
 
 from kiln_ai import datamodel
 from kiln_ai.adapters.ml_model_list import ModelProviderName
@@ -15,28 +16,59 @@ from kiln_ai.utils.config import Config
 def adapter_for_task(
     kiln_task: datamodel.Task,
     model_name: str,
-    provider: str | None = None,
+    provider: ModelProviderName,
     prompt_builder: BasePromptBuilder | None = None,
     tags: list[str] | None = None,
 ) -> BaseAdapter:
-    if provider == ModelProviderName.openrouter:
-        return OpenAICompatibleAdapter(
-            kiln_task=kiln_task,
-            config=OpenAICompatibleConfig(
-                base_url=getenv("OPENROUTER_BASE_URL")
-                or "https://openrouter.ai/api/v1",
-                api_key=Config.shared().open_router_api_key,
-                model_name=model_name,
-                provider_name=provider,
-                openrouter_style_reasoning=True,
-                default_headers={
-                    "HTTP-Referer": "https://getkiln.ai/openrouter",
-                    "X-Title": "KilnAI",
-                },
-            ),
-            prompt_builder=prompt_builder,
-            tags=tags,
-        )
+    match provider:
+        case ModelProviderName.openrouter:
+            return OpenAICompatibleAdapter(
+                kiln_task=kiln_task,
+                config=OpenAICompatibleConfig(
+                    base_url=getenv("OPENROUTER_BASE_URL")
+                    or "https://openrouter.ai/api/v1",
+                    api_key=Config.shared().open_router_api_key,
+                    model_name=model_name,
+                    provider_name=provider,
+                    openrouter_style_reasoning=True,
+                    default_headers={
+                        "HTTP-Referer": "https://getkiln.ai/openrouter",
+                        "X-Title": "KilnAI",
+                    },
+                ),
+                prompt_builder=prompt_builder,
+                tags=tags,
+            )
+        case ModelProviderName.openai:
+            return OpenAICompatibleAdapter(
+                kiln_task=kiln_task,
+                config=OpenAICompatibleConfig(
+                    api_key=Config.shared().open_ai_api_key,
+                    model_name=model_name,
+                    provider_name=provider,
+                ),
+                prompt_builder=prompt_builder,
+                tags=tags,
+            )
+        # Use LangchainAdapter for the rest
+        case ModelProviderName.openai_compatible:
+            pass
+        case ModelProviderName.groq:
+            pass
+        case ModelProviderName.amazon_bedrock:
+            pass
+        case ModelProviderName.ollama:
+            pass
+        case ModelProviderName.fireworks_ai:
+            pass
+        case ModelProviderName.kiln_fine_tune:
+            pass
+        case ModelProviderName.kiln_custom_registry:
+            pass
+        case _:
+            raise ValueError(f"Unsupported provider: {provider}")
+            # Triggers typechecking if I miss a case
+            return NoReturn
 
     # We use langchain for all others right now, but moving off it as we touch anything.
     return LangchainAdapter(
