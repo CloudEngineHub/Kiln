@@ -460,6 +460,23 @@ def connect_tool_servers_api(app: FastAPI):
             missing_secrets=[],
         )
 
+    @app.get("/api/projects/{project_id}/tool_servers/{tool_server_id}/config")
+    async def get_tool_server_config(
+        project_id: str, tool_server_id: str
+    ) -> ExternalToolServerApiDescription:
+        tool_server = tool_server_from_id(project_id, tool_server_id)
+        return ExternalToolServerApiDescription(
+            id=tool_server.id,
+            name=tool_server.name,
+            type=tool_server.type,
+            description=tool_server.description,
+            created_at=tool_server.created_at,
+            created_by=tool_server.created_by,
+            properties=tool_server.properties,
+            available_tools=[],
+            missing_secrets=[],
+        )
+
     @app.post("/api/projects/{project_id}/connect_remote_mcp")
     async def connect_remote_mcp(
         project_id: str, tool_data: ExternalToolServerCreationRequest

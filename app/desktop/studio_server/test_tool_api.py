@@ -467,6 +467,61 @@ def test_get_tool_server_not_found(client, test_project):
         assert result["detail"] == "Tool server not found"
 
 
+@pytest.mark.anyio
+async def test_get_tool_server_config_returns_file_data_without_connecting(
+    client, test_project
+):
+    """The /config endpoint must return tool server data without attempting
+    a connection, so the edit form loads even when the MCP server is unreachable."""
+    tool_data = {
+        "name": "config_test_tool",
+        "server_url": "https://example.com/api",
+        "headers": {},
+        "description": "Tool for config test",
+        "is_archived": False,
+    }
+
+    with patch(
+        "app.desktop.studio_server.tool_api.project_from_id"
+    ) as mock_project_from_id:
+        mock_project_from_id.return_value = test_project
+
+        async with mock_mcp_success():
+            create_response = client.post(
+                f"/api/projects/{test_project.id}/connect_remote_mcp",
+                json=tool_data,
+            )
+            assert create_response.status_code == 200
+        tool_server_id = create_response.json()["id"]
+
+        # Call /config while the MCP connection is broken — must still succeed
+        async with mock_mcp_list_tools_error("Connection failed"):
+            response = client.get(
+                f"/api/projects/{test_project.id}/tool_servers/{tool_server_id}/config"
+            )
+
+        assert response.status_code == 200
+        result = response.json()
+        assert result["name"] == "config_test_tool"
+        assert result["type"] == "remote_mcp"
+        assert result["available_tools"] == []
+        assert result["missing_secrets"] == []
+
+
+def test_get_tool_server_config_not_found(client, test_project):
+    with patch(
+        "app.desktop.studio_server.tool_api.project_from_id"
+    ) as mock_project_from_id:
+        mock_project_from_id.return_value = test_project
+
+        response = client.get(
+            f"/api/projects/{test_project.id}/tool_servers/nonexistent-id/config"
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Tool server not found"
+
+
 def test_get_available_tools_empty(client, test_project):
     """Test get_available_tools with no tool servers returns empty list"""
     with patch(
