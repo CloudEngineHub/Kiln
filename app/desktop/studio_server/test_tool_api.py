@@ -3,6 +3,13 @@ from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from app.desktop.studio_server.tool_api import (
+    ExternalToolApiDescription,
+    available_mcp_tools,
+    connect_tool_servers_api,
+    tool_server_from_id,
+    validate_tool_server_connectivity,
+)
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from kiln_ai.datamodel.datamodel_enums import StructuredOutputMode
@@ -15,14 +22,6 @@ from kiln_ai.datamodel.task import Task, TaskRunConfig
 from kiln_ai.datamodel.tool_id import KILN_TASK_TOOL_ID_PREFIX
 from kiln_ai.utils.config import MCP_SECRETS_KEY
 from mcp.types import ListToolsResult, Tool
-
-from app.desktop.studio_server.tool_api import (
-    ExternalToolApiDescription,
-    available_mcp_tools,
-    connect_tool_servers_api,
-    tool_server_from_id,
-    validate_tool_server_connectivity,
-)
 
 
 @pytest.fixture
@@ -467,7 +466,6 @@ def test_get_tool_server_not_found(client, test_project):
         assert result["detail"] == "Tool server not found"
 
 
-@pytest.mark.anyio
 async def test_get_tool_server_config_returns_file_data_without_connecting(
     client, test_project
 ):
