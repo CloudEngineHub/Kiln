@@ -409,7 +409,7 @@
     action_buttons={[
       {
         label: "Edit",
-        href: `/settings/manage_tools/${project_id}/edit_tool_server/${tool_server?.id}`,
+        href: `/settings/manage_tools/${project_id}/edit_tool_server/${tool_server_id}`,
       },
       {
         label: is_archived ? "Unarchive" : "Archive",

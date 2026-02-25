@@ -3,6 +3,13 @@ from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from app.desktop.studio_server.tool_api import (
+    ExternalToolApiDescription,
+    available_mcp_tools,
+    connect_tool_servers_api,
+    tool_server_from_id,
+    validate_tool_server_connectivity,
+)
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from kiln_ai.datamodel.datamodel_enums import StructuredOutputMode
@@ -15,14 +22,6 @@ from kiln_ai.datamodel.task import Task, TaskRunConfig
 from kiln_ai.datamodel.tool_id import KILN_TASK_TOOL_ID_PREFIX
 from kiln_ai.utils.config import MCP_SECRETS_KEY
 from mcp.types import ListToolsResult, Tool
-
-from app.desktop.studio_server.tool_api import (
-    ExternalToolApiDescription,
-    available_mcp_tools,
-    connect_tool_servers_api,
-    tool_server_from_id,
-    validate_tool_server_connectivity,
-)
 
 
 @pytest.fixture
@@ -465,6 +464,60 @@ def test_get_tool_server_not_found(client, test_project):
         assert response.status_code == 404
         result = response.json()
         assert result["detail"] == "Tool server not found"
+
+
+async def test_get_tool_server_config_returns_file_data_without_connecting(
+    client, test_project
+):
+    """The /config endpoint must return tool server data without attempting
+    a connection, so the edit form loads even when the MCP server is unreachable."""
+    tool_data = {
+        "name": "config_test_tool",
+        "server_url": "https://example.com/api",
+        "headers": {},
+        "description": "Tool for config test",
+        "is_archived": False,
+    }
+
+    with patch(
+        "app.desktop.studio_server.tool_api.project_from_id"
+    ) as mock_project_from_id:
+        mock_project_from_id.return_value = test_project
+
+        async with mock_mcp_success():
+            create_response = client.post(
+                f"/api/projects/{test_project.id}/connect_remote_mcp",
+                json=tool_data,
+            )
+            assert create_response.status_code == 200
+        tool_server_id = create_response.json()["id"]
+
+        # Call /config while the MCP connection is broken — must still succeed
+        async with mock_mcp_list_tools_error("Connection failed"):
+            response = client.get(
+                f"/api/projects/{test_project.id}/tool_servers/{tool_server_id}/config"
+            )
+
+        assert response.status_code == 200
+        result = response.json()
+        assert result["name"] == "config_test_tool"
+        assert result["type"] == "remote_mcp"
+        assert result["available_tools"] == []
+        assert result["missing_secrets"] == []
+
+
+def test_get_tool_server_config_not_found(client, test_project):
+    with patch(
+        "app.desktop.studio_server.tool_api.project_from_id"
+    ) as mock_project_from_id:
+        mock_project_from_id.return_value = test_project
+
+        response = client.get(
+            f"/api/projects/{test_project.id}/tool_servers/nonexistent-id/config"
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Tool server not found"
 
 
 def test_get_available_tools_empty(client, test_project):
