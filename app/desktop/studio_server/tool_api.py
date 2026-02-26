@@ -480,7 +480,7 @@ def connect_tool_servers_api(app: FastAPI):
                             stderr_text = stderr_text[:4096] + "\n... (truncated)"
                         detail += f"\n\nMCP server stderr:\n{stderr_text}"
 
-                    logger.error("MCP list_tools failed:\n%s", detail, exc_info=True)
+                    logger.error("MCP list_tools failed:\n%s", e, exc_info=True)
                     raise HTTPException(status_code=503, detail=detail) from e
             case ToolServerType.kiln_task:
                 available_tools = [

@@ -18,10 +18,11 @@ from kiln_ai.datamodel.project import Project
 from kiln_ai.datamodel.prompt_id import PromptGenerators
 from kiln_ai.datamodel.rag import RagConfig
 from kiln_ai.datamodel.run_config import KilnAgentRunConfigProperties
-from kiln_ai.tools.mcp_session_manager import KilnMCPError
 from kiln_ai.datamodel.task import Task, TaskRunConfig
 from kiln_ai.datamodel.tool_id import KILN_TASK_TOOL_ID_PREFIX
+from kiln_ai.tools.mcp_session_manager import KilnMCPError
 from kiln_ai.utils.config import MCP_SECRETS_KEY
+from kiln_server.custom_errors import connect_custom_errors
 from mcp.types import ListToolsResult, Tool
 
 
@@ -111,6 +112,7 @@ async def mock_mcp_list_tools_error(error_message="list_tools failed"):
 @pytest.fixture
 def app():
     test_app = FastAPI()
+    connect_custom_errors(test_app)
     connect_tool_servers_api(test_app)
     return test_app
 
@@ -449,7 +451,7 @@ async def test_get_tool_server_mcp_error_handling(client, test_project):
             )
             assert response.status_code == 503
             result = response.json()
-            assert "Connection failed" in result["detail"]
+            assert "Connection failed" in result["message"]
 
 
 def test_get_tool_server_not_found(client, test_project):
@@ -465,7 +467,7 @@ def test_get_tool_server_not_found(client, test_project):
 
         assert response.status_code == 404
         result = response.json()
-        assert result["detail"] == "Tool server not found"
+        assert result["message"] == "Tool server not found"
 
 
 async def test_get_tool_server_config_returns_file_data_without_connecting(
@@ -519,7 +521,7 @@ def test_get_tool_server_config_not_found(client, test_project):
         )
 
         assert response.status_code == 404
-        assert response.json()["detail"] == "Tool server not found"
+        assert response.json()["message"] == "Tool server not found"
 
 
 def test_get_available_tools_empty(client, test_project):
@@ -1675,7 +1677,7 @@ def test_delete_tool_server_not_found(client, test_project):
             f"/api/projects/{test_project.id}/tool_servers/non-existent-id"
         )
         assert response.status_code == 404
-        assert "Tool server not found" in response.json()["detail"]
+        assert "Tool server not found" in response.json()["message"]
 
 
 def test_delete_tool_server_project_not_found(client):
@@ -1685,7 +1687,7 @@ def test_delete_tool_server_project_not_found(client):
         "/api/projects/non-existent-project/tool_servers/some-tool-id"
     )
     assert response.status_code == 404
-    assert "Project not found" in response.json()["detail"]
+    assert "Project not found" in response.json()["message"]
 
 
 async def test_delete_tool_server_affects_available_servers_list(client, test_project):
@@ -3090,7 +3092,7 @@ async def test_edit_local_mcp_404(client, test_project, edit_local_server_data):
             json=edit_local_server_data,
         )
         assert response.status_code == 404
-        assert response.json() == {"detail": "Tool server not found"}
+        assert response.json() == {"message": "Tool server not found"}
 
 
 @pytest.fixture
@@ -3140,7 +3142,7 @@ async def test_edit_local_mcp_wrong_type(
         )
         assert response.status_code == 400
         assert response.json() == {
-            "detail": "Existing tool server is not a local MCP server. You can't edit a non-local MCP server with this endpoint."
+            "message": "Existing tool server is not a local MCP server. You can't edit a non-local MCP server with this endpoint."
         }
 
 
@@ -3220,7 +3222,7 @@ async def test_edit_remote_mcp_404(client, test_project, edit_remote_server_data
             json=edit_remote_server_data,
         )
         assert response.status_code == 404
-        assert response.json() == {"detail": "Tool server not found"}
+        assert response.json() == {"message": "Tool server not found"}
 
 
 async def test_edit_remote_mcp_wrong_type(
@@ -3238,7 +3240,7 @@ async def test_edit_remote_mcp_wrong_type(
         )
         assert response.status_code == 400
         assert response.json() == {
-            "detail": "Existing tool server is not a remote MCP server. You can't edit a non-remote MCP server with this endpoint."
+            "message": "Existing tool server is not a remote MCP server. You can't edit a non-remote MCP server with this endpoint."
         }
 
 
@@ -4163,7 +4165,7 @@ async def test_add_kiln_task_tool_validation_task_not_found(client, test_project
         )
 
         assert response.status_code == 404
-        assert "Task not found" in response.json()["detail"]
+        assert "Task not found" in response.json()["message"]
 
 
 @pytest.mark.asyncio
@@ -4212,7 +4214,7 @@ async def test_add_kiln_task_tool_validation_run_config_not_found(client, test_p
 
         assert response.status_code == 400
         assert (
-            "Run config not found for the specified task" in response.json()["detail"]
+            "Run config not found for the specified task" in response.json()["message"]
         )
 
 
@@ -4333,7 +4335,7 @@ async def test_edit_kiln_task_tool_validation_task_not_found(client, test_projec
         )
 
         assert response.status_code == 404
-        assert "Task not found" in response.json()["detail"]
+        assert "Task not found" in response.json()["message"]
 
 
 @pytest.mark.asyncio
@@ -4401,7 +4403,7 @@ async def test_edit_kiln_task_tool_validation_run_config_not_found(
 
         assert response.status_code == 400
         assert (
-            "Run config not found for the specified task" in response.json()["detail"]
+            "Run config not found for the specified task" in response.json()["message"]
         )
 
 
@@ -4518,8 +4520,8 @@ async def test_get_tool_definition_tool_not_found(client, test_project):
 
         assert response.status_code == 404
         result = response.json()
-        assert "Tool not found or could not be instantiated" in result["detail"]
-        assert invalid_tool_id in result["detail"]
+        assert "Tool not found or could not be instantiated" in result["message"]
+        assert invalid_tool_id in result["message"]
 
 
 @pytest.mark.asyncio
@@ -4539,4 +4541,4 @@ async def test_get_tool_definition_task_not_found(client, test_project):
         )
 
         assert response.status_code == 404
-        assert "Task not found" in response.json()["detail"]
+        assert "Task not found" in response.json()["message"]
