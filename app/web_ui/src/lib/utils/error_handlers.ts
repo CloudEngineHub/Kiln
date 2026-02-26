@@ -42,22 +42,13 @@ export function createKilnError(e: unknown): KilnError {
   ) {
     return new KilnError("Unexpected error: " + e.details, null)
   }
-  if (e && typeof e === "object") {
-    if (
-      "detail" in e &&
-      typeof (e as Record<string, unknown>).detail === "string"
-    ) {
-      return new KilnError((e as { detail: string }).detail, null)
-    }
-    if (
-      "message" in e &&
-      typeof (e as Record<string, unknown>).message === "string"
-    ) {
-      return new KilnError(
-        "Unexpected error: " + (e as { message: string }).message,
-        null,
-      )
-    }
+  if (
+    e &&
+    typeof e === "object" &&
+    "message" in e &&
+    typeof e.message === "string"
+  ) {
+    return new KilnError("Unexpected error: " + e.message, null)
   }
 
   return new KilnError("Unknown error", null)
