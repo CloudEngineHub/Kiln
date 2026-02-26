@@ -20,7 +20,10 @@ from kiln_ai.datamodel.tool_id import (
     build_rag_tool_id,
 )
 from kiln_ai.tools.kiln_task_tool import KilnTaskTool
-from kiln_ai.tools.mcp_session_manager import MCPSessionManager
+from kiln_ai.tools.mcp_session_manager import (
+    MCPSessionManager,
+    KilnMCPError,
+)
 from kiln_ai.tools.tool_registry import tool_from_id
 from kiln_ai.utils.config import Config
 from kiln_ai.utils.exhaustive_error import raise_exhaustive_enum_error
@@ -428,15 +431,21 @@ def connect_tool_servers_api(app: FastAPI):
         available_tools = []
         match tool_server.type:
             case ToolServerType.remote_mcp | ToolServerType.local_mcp:
-                async with MCPSessionManager.shared().mcp_client(
-                    tool_server
-                ) as session:
-                    tools_result = await session.list_tools()
+                try:
+                    async with MCPSessionManager.shared().mcp_client(
+                        tool_server
+                    ) as session:
+                        tools_result = await session.list_tools()
 
-                    available_tools = [
-                        ExternalToolApiDescription.tool_from_mcp_tool(tool)
-                        for tool in tools_result.tools
-                    ]
+                        available_tools = [
+                            ExternalToolApiDescription.tool_from_mcp_tool(tool)
+                            for tool in tools_result.tools
+                        ]
+                except (KilnMCPError, ValueError) as e:
+                    detail = str(e)
+                    if hasattr(e, "stderr") and e.stderr:
+                        detail += f"\n\nMCP server stderr:\n{e.stderr}"
+                    raise HTTPException(status_code=503, detail=detail) from e
             case ToolServerType.kiln_task:
                 available_tools = [
                     await ExternalToolApiDescription.tool_from_kiln_task_tool(

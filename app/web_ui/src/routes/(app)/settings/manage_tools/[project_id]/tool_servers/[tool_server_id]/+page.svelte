@@ -19,6 +19,7 @@
   import { selected_tool_for_task } from "$lib/stores/tools_store"
   import TableButton from "../../../../../generate/[project_id]/[task_id]/table_button.svelte"
   import Float from "$lib/ui/float.svelte"
+  import ErrorDetailsBlock from "$lib/ui/error_details_block.svelte"
 
   $: project_id = $page.params.project_id!
   $: tool_server_id = $page.params.tool_server_id!
@@ -489,17 +490,14 @@
         <div class="loading loading-spinner loading-lg"></div>
       </div>
     {:else if loading_error}
-      <div
-        class="w-full min-h-[50vh] flex flex-col justify-center items-center gap-2"
-      >
-        <div class="font-medium">Error Loading Tool</div>
-        <div class="text-error text-sm">
-          {loading_error.getMessage() || "An unknown error occurred"}
-        </div>
-        <button class="btn btn-primary mt-4" on:click={goBack}>
-          Back to Tools
-        </button>
-      </div>
+      <ErrorDetailsBlock
+        title="Error Loading Tool Server"
+        error_messages={loading_error.getErrorMessages()}
+        troubleshooting_steps={[
+          "Click <strong>Edit</strong> above to update the server configuration.",
+          "Check Kiln logs for additional details.",
+        ]}
+      />
     {:else if tool_server}
       <!-- Row 1: Properties and Connection Details side by side -->
       <div class="flex flex-col lg:flex-row gap-8 lg:gap-16 mb-10">

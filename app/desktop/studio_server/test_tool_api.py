@@ -18,6 +18,7 @@ from kiln_ai.datamodel.project import Project
 from kiln_ai.datamodel.prompt_id import PromptGenerators
 from kiln_ai.datamodel.rag import RagConfig
 from kiln_ai.datamodel.run_config import KilnAgentRunConfigProperties
+from kiln_ai.tools.mcp_session_manager import KilnMCPError
 from kiln_ai.datamodel.task import Task, TaskRunConfig
 from kiln_ai.datamodel.tool_id import KILN_TASK_TOOL_ID_PREFIX
 from kiln_ai.utils.config import MCP_SECRETS_KEY
@@ -84,7 +85,7 @@ async def mock_mcp_success(tools=None):
 @asynccontextmanager
 async def mock_mcp_connection_error(error_message="Connection failed"):
     """Context manager for MCP connection errors."""
-    error = Exception(error_message)
+    error = KilnMCPError(error_message)
     patch_obj, mock_client = create_mcp_session_manager_patch(connection_error=error)
 
     with patch_obj as mock_session_manager_shared:
@@ -97,7 +98,7 @@ async def mock_mcp_connection_error(error_message="Connection failed"):
 @asynccontextmanager
 async def mock_mcp_list_tools_error(error_message="list_tools failed"):
     """Context manager for MCP list_tools errors."""
-    error = Exception(error_message)
+    error = KilnMCPError(error_message)
     patch_obj, mock_client = create_mcp_session_manager_patch(list_tools_error=error)
 
     with patch_obj as mock_session_manager_shared:
@@ -415,7 +416,7 @@ async def test_get_tool_server_success(client, test_project):
 
 
 async def test_get_tool_server_mcp_error_handling(client, test_project):
-    """Test that MCP server errors are handled gracefully and return empty tools"""
+    """Test that MCP server errors are surfaced with HTTP 503 and the error message"""
     # First create a tool server
     tool_data = {
         "name": "failing_mcp_tool",
@@ -442,12 +443,13 @@ async def test_get_tool_server_mcp_error_handling(client, test_project):
 
         # Mock retrieval with list_tools error
         async with mock_mcp_list_tools_error("Connection failed"):
-            # The API should handle the exception gracefully
-            # For now, let's test that it raises the exception since that's the current behavior
-            with pytest.raises(Exception, match="Connection failed"):
-                client.get(
-                    f"/api/projects/{test_project.id}/tool_servers/{tool_server_id}"
-                )
+            # The API should surface the error as HTTP 503 with the error message in detail
+            response = client.get(
+                f"/api/projects/{test_project.id}/tool_servers/{tool_server_id}"
+            )
+            assert response.status_code == 503
+            result = response.json()
+            assert "Connection failed" in result["detail"]
 
 
 def test_get_tool_server_not_found(client, test_project):

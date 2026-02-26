@@ -45,10 +45,10 @@ export function createKilnError(e: unknown): KilnError {
   if (
     e &&
     typeof e === "object" &&
-    "message" in e &&
-    typeof e.message === "string"
+    "detail" in e &&
+    typeof (e as Record<string, unknown>).detail === "string"
   ) {
-    return new KilnError("Unexpected error: " + e.message, null)
+    return new KilnError((e as { detail: string }).detail, null)
   }
 
   return new KilnError("Unknown error", null)
