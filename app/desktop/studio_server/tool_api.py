@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List
@@ -32,6 +33,8 @@ from kiln_server.project_api import project_from_id
 from kiln_server.task_api import task_from_id
 from mcp.types import Tool as MCPTool
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 class KilnToolServerDescription(BaseModel):
@@ -470,12 +473,14 @@ def connect_tool_servers_api(app: FastAPI):
                         context_lines.append(f"Server URL: {server_url_text}")
 
                     detail = "\n".join(context_lines) + f"\n\nError: {e}"
-                    stderr_text = getattr(e, "stderr", "")
-                    if isinstance(stderr_text, str) and stderr_text:
+                    stderr_text = e.stderr if isinstance(e, KilnMCPError) else ""
+                    if stderr_text:
                         # Truncate the error to 4kb
                         if len(stderr_text) > 4096:
                             stderr_text = stderr_text[:4096] + "\n... (truncated)"
                         detail += f"\n\nMCP server stderr:\n{stderr_text}"
+
+                    logger.error("MCP list_tools failed:\n%s", detail, exc_info=True)
                     raise HTTPException(status_code=503, detail=detail) from e
             case ToolServerType.kiln_task:
                 available_tools = [

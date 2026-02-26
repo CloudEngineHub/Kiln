@@ -317,19 +317,19 @@
           </div>
         </div>
       </FormList>
-    </FormContainer>
 
-    {#if error}
-      <ErrorDetailsBlock
-        title="Could Not Connect to MCP Server"
-        error_messages={error.getErrorMessages()}
-        troubleshooting_steps={[
-          "Verify the URL is correct.",
-          "Verify the server is running and accessible.",
-          "Check your network connection.",
-          "Check Kiln logs for additional details.",
-        ]}
-      />
-    {/if}
+      {#if error}
+        <ErrorDetailsBlock
+          title="Could Not Connect to MCP Server"
+          error_messages={error.getErrorMessages()}
+          troubleshooting_steps={[
+            "Verify the URL is correct.",
+            "Verify the server is running and accessible.",
+            "Check your network connection.",
+            "Check Kiln logs for additional details.",
+          ]}
+        />
+      {/if}
+    </FormContainer>
   </div>
 </div>

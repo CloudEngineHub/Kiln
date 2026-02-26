@@ -494,8 +494,9 @@
         title="Error Loading Tool Server"
         error_messages={loading_error.getErrorMessages()}
         troubleshooting_steps={[
-          "Use the **Edit** button at the top of this page to update the server configuration.",
-          "Check Kiln logs for additional details.",
+          "Review the configuration using the **Edit** button at the top of this page.",
+          "If the server is unavailable, try again later.",
+          "Check Kiln logs for more details.",
         ]}
         markdown={true}
         trusted={true}
