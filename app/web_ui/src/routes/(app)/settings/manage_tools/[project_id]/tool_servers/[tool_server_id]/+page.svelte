@@ -494,9 +494,11 @@
         title="Error Loading Tool Server"
         error_messages={loading_error.getErrorMessages()}
         troubleshooting_steps={[
-          "Click <strong>Edit</strong> above to update the server configuration.",
+          "Click **Edit** above to update the server configuration.",
           "Check Kiln logs for additional details.",
         ]}
+        markdown={true}
+        trusted={true}
       />
     {:else if tool_server}
       <!-- Row 1: Properties and Connection Details side by side -->

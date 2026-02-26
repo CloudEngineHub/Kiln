@@ -379,7 +379,7 @@
           troubleshooting_steps={[
             "Check the Error Details below for information about the issue.",
             "Check the server's documentation for the correct setup (dependencies, etc.).",
-            `Ensure your command <span class="font-mono text-xs font-bold bg-base-200 p-1 rounded-sm">${command} ${args}</span> runs in your terminal. If you had to install libraries or dependencies, restart the Kiln app before trying again.`,
+            `Ensure your command ${command} ${args} runs in your terminal. If you had to install libraries or dependencies, restart the Kiln app before trying again.`,
             "Check Kiln logs for additional details.",
           ]}
         />
