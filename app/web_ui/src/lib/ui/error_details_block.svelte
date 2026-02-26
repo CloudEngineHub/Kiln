@@ -42,9 +42,6 @@
         max_height="120px"
       />
     </div>
-  {/if}
-
-  {#if show_logs}
     <div>
       <button type="button" class="link" on:click={view_logs}>
         View Logs

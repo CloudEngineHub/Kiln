@@ -470,8 +470,12 @@ def connect_tool_servers_api(app: FastAPI):
                         context_lines.append(f"Server URL: {server_url_text}")
 
                     detail = "\n".join(context_lines) + f"\n\nError: {e}"
-                    if hasattr(e, "stderr") and e.stderr:
-                        detail += f"\n\nMCP server stderr:\n{e.stderr}"
+                    stderr_text = getattr(e, "stderr", "")
+                    if isinstance(stderr_text, str) and stderr_text:
+                        # Truncate the error to 4kb
+                        if len(stderr_text) > 4096:
+                            stderr_text = stderr_text[:4096] + "\n... (truncated)"
+                        detail += f"\n\nMCP server stderr:\n{stderr_text}"
                     raise HTTPException(status_code=503, detail=detail) from e
             case ToolServerType.kiln_task:
                 available_tools = [
