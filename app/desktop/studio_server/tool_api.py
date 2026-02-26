@@ -10,6 +10,7 @@ from kiln_ai.datamodel.external_tool_server import (
     LocalServerProperties,
     RemoteServerProperties,
     ToolServerType,
+    tool_server_type_to_string,
 )
 from kiln_ai.datamodel.tool_id import (
     MCP_LOCAL_TOOL_ID_PREFIX,
@@ -21,8 +22,8 @@ from kiln_ai.datamodel.tool_id import (
 )
 from kiln_ai.tools.kiln_task_tool import KilnTaskTool
 from kiln_ai.tools.mcp_session_manager import (
-    MCPSessionManager,
     KilnMCPError,
+    MCPSessionManager,
 )
 from kiln_ai.tools.tool_registry import tool_from_id
 from kiln_ai.utils.config import Config
@@ -442,7 +443,33 @@ def connect_tool_servers_api(app: FastAPI):
                             for tool in tools_result.tools
                         ]
                 except (KilnMCPError, ValueError) as e:
-                    detail = str(e)
+                    context_lines = [
+                        "MCP call failed: list_tools",
+                        f"Tool server: {tool_server.name} ({tool_server.id})",
+                        f"Type: {tool_server_type_to_string(tool_server.type)}",
+                    ]
+                    props = tool_server.properties or {}
+                    if tool_server.type == ToolServerType.local_mcp:
+                        command = props.get("command")
+                        args = props.get("args")
+                        command_text = (
+                            command if isinstance(command, str) else "<unknown>"
+                        )
+                        args_text = (
+                            " ".join(args)
+                            if isinstance(args, list)
+                            and all(isinstance(arg, str) for arg in args)
+                            else "<unknown>"
+                        )
+                        context_lines.append(f"Command: {command_text} {args_text}")
+                    elif tool_server.type == ToolServerType.remote_mcp:
+                        server_url = props.get("server_url")
+                        server_url_text = (
+                            server_url if isinstance(server_url, str) else "<unknown>"
+                        )
+                        context_lines.append(f"Server URL: {server_url_text}")
+
+                    detail = "\n".join(context_lines) + f"\n\nError: {e}"
                     if hasattr(e, "stderr") and e.stderr:
                         detail += f"\n\nMCP server stderr:\n{e.stderr}"
                     raise HTTPException(status_code=503, detail=detail) from e
